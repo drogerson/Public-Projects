@@ -11760,22 +11760,22 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Happy Thanksgiving everyone! My name's Dylan. I've been a long time Magic: The Gathering player (Ice Age anyone?), I work as a Data Scientist for a gaming company and I had some free time this Thanksgiving...so why not try to teach myself some new techniques while trying to answer a rather elusive question: How diverse is a format in Magic: The Gathering?</p>
-<p>To start we need to pick a format and download some decks. I'm going to stick with modern because of its 'purported' diversity and <a href="https://www.mtggoldfish.com/metagame/modern#online">https://www.mtggoldfish.com/metagame/modern#online</a> because they have some really good metadata (data around stuff besides the cards themselves). Now our job should be easy right? We count up all the deck names from the past 2 weeks, make a distribution, calculate some little number and feel good...well there's a couple problems with deck names.</p>
-<p>1) They're completely hand-labeled. Is Dredge (<a href="https://www.mtggoldfish.com/deck/516731#online">https://www.mtggoldfish.com/deck/516731#online</a>) a complete different deck than (<a href="https://www.mtggoldfish.com/deck/514963#online)?">https://www.mtggoldfish.com/deck/514963#online)?</a> If all decks look like variations on this theme would that constitute a diverse meta game?</p>
-<p>2) We can't label decks by the content of their cards. Well we could. But if you took a Jund Deck and added one more Swamp, with this method it would be an entirely new deck. Well that doesn't make sense.</p>
-<p>3) Fringe decks muddle with the concept of diversity. This is a strange argument I'll grant you, but imagine we're in an area of strong experimentation (say a month after a major unbanning). We'd think the format was diverse, but in reality the format hadn't settled yet. We wouldn't have common archetypes and 'too much diversity' blurs any understanding of a meta. Is there even a solution for this?</p>
-<p>There is a solution and it lies in an area of machine learning known as unsupervised learning (<a href="https://en.wikipedia.org/wiki/Unsupervised_learning">https://en.wikipedia.org/wiki/Unsupervised_learning</a>). As opposed to supervised learning that tries to predict the likelihood of a defined event (like your credit card rating that predicts your likelihood to default), unsupervised learning looks for underlying patterns; hidden structure from unlabeled data. Using a specific method (fuzzy c-means <a href="https://en.wikipedia.org/wiki/Fuzzy_clustering#Fuzzy_C-means_Clustering">https://en.wikipedia.org/wiki/Fuzzy_clustering#Fuzzy_C-means_Clustering</a>) we'll find clusters of cards that make up decks (the meta itself), identify these cluster and fringe decks and then use some simple stats to calculate the diversity of the meta.</p>
-<p>This post will cover the code used to run this clustering analysis R. The audience here (you) is hopefully more general that some of my previous articles, so I'm going to be a bit hand-wavy with some of the more subtler nuances in the mathy bits. If any of you out there are data scientists yourself, please don't beat me over the head for casually swapping between terms like clusters and archetypes (yes I know those are technically quite different). That said, if you have more technical questions feel free to reach out to me!</p>
+<p>Happy Thanksgiving everyone! My name's Dylan. I've been a long time Magic: The Gathering player (Ice Age anyone?), I work as a Data Scientist for a major game company and I had some free time this Thanksgiving...so why not try to teach myself some new techniques while trying to answer a rather elusive question: How diverse is a format in Magic: The Gathering?</p>
+<p>To start we need to pick a format and download some decks. I'm going to stick with modern because of its purported diversity and because <a href="https://www.mtggoldfish.com/metagame/modern#online">https://www.mtggoldfish.com/metagame/modern#online</a> has some really good metadata (data around stuff besides the cards themselves). Now our job should be easy right? We count up all the deck names from the past 2 weeks, make a distribution, calculate some little number and feel good. Well there's a couple problems with this approach:</p>
+<p>1) Deck names are completely hand-labeled. Is Dredge (<a href="https://www.mtggoldfish.com/deck/516731#online">https://www.mtggoldfish.com/deck/516731#online</a>) a complete different deck than WUBRG (<a href="https://www.mtggoldfish.com/deck/514963#online)?">https://www.mtggoldfish.com/deck/514963#online)?</a> If all decks look like variations on this theme would that constitute a diverse meta game?</p>
+<p>2) We can't label decks by the content of their cards. Well we could, but if you took a Jund Deck and added one more Swamp it would be an entirely new deck. Well that doesn't make sense.</p>
+<p>3) Fringe decks muddle with the concept of diversity. This is a strange argument I'll grant you, but imagine we're in an area of strong experimentation (say a month after a major unbanning). We'd think the format was diverse, but in reality the format hadn't settled yet. We wouldn't have common archetypes and moreover 'too much diversity' blurs any understanding of a meta.</p>
+<p>A solution to these problems lies in an area of machine learning known as unsupervised learning (<a href="https://en.wikipedia.org/wiki/Unsupervised_learning">https://en.wikipedia.org/wiki/Unsupervised_learning</a>). As opposed to supervised learning that tries to predict the likelihood of a defined event (like your credit card rating that predicts your likelihood to default), unsupervised learning looks for underlying patterns and hidden structure from unlabeled data. Using a specific method (fuzzy c-means clustering <a href="https://en.wikipedia.org/wiki/Fuzzy_clustering#Fuzzy_C-means_Clustering">https://en.wikipedia.org/wiki/Fuzzy_clustering#Fuzzy_C-means_Clustering</a>) we'll find clusters of cards that make up decks (the meta itself), identify these clusters and fringe decks and then use some simple stats to calculate the diversity of the meta.</p>
+<p>This post will cover the code used to run this clustering analysis written in R. The audience here (you) is hopefully more general that some of my previous articles, so I'm going to be a bit hand-wavy with some of the more subtler nuances in the mathy bits. If any of you out there are data scientists yourself, please don't beat me over the head for casually swapping between terms like clusters and archetypes (yes I know those are technically quite different). That said, if you have more technical questions feel free to reach out to me at mathitthegathering@gmail.com!</p>
 <p>First let's load some packages!</p>
-<p>Side note: I also wrote a little webscraper which downloads all relevant decks (mainboard only), and then used a text mining package to process them and turn them into something usable. That part is rather straightforward and frankly boring so I'll skip to the good stuff.</p>
+<p>Side note: I also wrote a little webscraper which downloads all relevant decks (main board only), and then used a text mining package to process them and turn them into something usable. That part is rather straightforward and frankly boring so I'll skip to the good stuff.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[136]:</div>
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="c1">#Word Cloud Visualization</span>
@@ -11809,14 +11809,14 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>To begin, we start by loading our November dataset of 345 decks. We've recorded the event the decks came from, the number of cards in it, the deckname itself and the deckID (in case we want to view the webpage).</p>
+<p>To begin, we start by loading our November dataset of 345 decks. We've recorded the event the decks came from, the number of cards in it, the deck name itself and the deckID (in case we want to view the webpage). Each card is represented by a column counting the number cards in that deck. Since we have a column for each card in the every deck most will be zero.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[139]:</div>
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="c1">#Let&#39;s start by loading decks from the two weeks leading up to 11/23/16 Happy Thanksgiving!</span>
@@ -11880,7 +11880,7 @@ datModel <span class="o">&lt;-</span> datNovModern<span class="p">[,</span><span
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Let's use a wordcloud to visualize the decknames being used right now in Modern. It might be hard to spot, but Infect is actually the most common deck name at '8.3% of the meta', according to mtggoldfish. As mentioned before this is a little bit deceptive because we know that Dredge and Wubrg are nearly the same deck. Maybe combined they're more common than Infect?</p>
+<p>Let's use a wordcloud to visualize the deck names being used right now in Modern. It might be hard to spot, but Infect is actually the most common deck name at '8.3% of the meta', according to mtggoldfish. As mentioned before this is a little bit deceptive because we know that Dredge and WUBRG are nearly the same deck. Maybe combined they're more common than Infect?</p>
 
 </div>
 </div>
@@ -11933,7 +11933,7 @@ wordcloud<span class="p">(</span><span class="kp">as.character</span><span class
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Now we're stepping into some hard math. Here we use a combination of Hierarchical Clustering and Elbow Plots to get an idea of a 'good' number of clusters (k). Picking the right number of clusters relies on some tinkering and real understanding of how the data works. To be completely honest I spent a good deal of time here and on the results finding out what jives will with our understanding and what works and what doesn't. This process of adapting new machine learning models to new situations and problem sets is what makes up the bulk of research in machine learning. Also, we're very lucky to have a hand labeled dataset to guide our intuition! All of that said we'll start with what the elbow plot suggests (k = 20 clusters).</p>
+<p>Now we're stepping into some hard math. Here we use a combination of hierarchical clustering and elbow plots to get an idea of a 'good' number of clusters (k). Picking the right number of clusters relies on some tinkering and real understanding of how the data works. I spent a good deal of time here and on the results finding out what jives will with our understanding and what works and what doesn't. This process of adapting new machine learning models to new situations and problem sets is what makes up the bulk of research in machine learning. Also, we're very lucky to have a hand labeled dataset to guide our intuition! Looking to our results we'll start with what the elbow plot suggests (k = 20 clusters).</p>
 <p>Below you can also see a dendrogram which, while looking quite messy actually tells us that there's a great deal of difference between the decks we're considering. Going from top to bottom you can see it starts splitting quite early and the earlier splits happen the more different everything is. Feel free to compare to this example where the splits take longer to happen (scanning from top to bottom): <a href="https://www.mathworks.com/help/stats/dendrogram_default.png">https://www.mathworks.com/help/stats/dendrogram_default.png</a>.</p>
 
 </div>
@@ -11941,7 +11941,7 @@ wordcloud<span class="p">(</span><span class="kp">as.character</span><span class
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="c1">#Compute manhattan distance between decks</span>
@@ -12006,14 +12006,14 @@ attr(,&#34;class&#34;)
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Now we'll apply Fuzzy C-Means Clustering to our decks, which creates 20 clusters or 'Archetypes' that our decks can belong to. One cool aspect of Fuzzy Clustering is that decks are written in stone as members of a cluster. Instead they have a degree of 'membership' to all clusters. Looking at the results we can see that the Skred Red deck that performed well in Lakeland (row 3) has a very strong affinity to cluster 1 with a score of 92/100. Cluster 1 will probably be the Skred cluster.</p>
+<p>Now we'll apply fuzzy c-means clustering to our decks, which creates 20 clusters or 'archetypes' that our decks can belong to. One cool aspect of fuzzy clustering is that decks aren't written in stone as members of a cluster. Instead decks have a degree of 'membership' to all clusters. For instance we can see that the Skred Red deck that performed well in Lakeland (row 3) has a very strong affinity to cluster 1 with a score of 92/100. Cluster 1 will probably be the Skred cluster.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[168]:</div>
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="c1">#Applying Fuzzy CMeans</span>
@@ -12069,16 +12069,16 @@ fuzzyClustModernNov <span class="o">&lt;-</span> fanny<span class="p">(</span>da
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Now let's talk about Abzan Blink (row 2). It doesn't have a strong affinity to any of the clusters. Does this mean that it isn't part of the meta game? Mathematically? No. It's not common enough in play to form it's own identity, but it did come out of nowhere and place well in lakeland. Fringe decks like these are good to look to see what's coming up on the horizon (and what's falling off).</p>
-<p>Getting back to the math, in order to be considered part of the meta we only look for decks that have at 50% or greater membership in any one cluster. Sorry Abzan Blink. You're out!</p>
-<p>For those that were sad to see Abzan Blink get booted for the cool meta club feel free to check out him and his(her?) friends in the appendix.</p>
+<p>Now let's talk about Abzan Blink (row 2). It doesn't have a strong membership to any of the clusters. Does this mean that it isn't part of the meta game? Mathematically? No. It's not common enough in play to form it's own identity, but it did come out of nowhere and place well in lakeland. Fringe decks like these are good to look to see what's coming up on the horizon (and what's falling off).</p>
+<p>So in order to be considered part of the meta we only look for decks that have a 50% or greater membership in any one cluster. Sorry Abzan Blink. You're out!</p>
+<p>For those that are interested to see what other decks constitute fringe decks in the meta feel free to check out the appendix.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[140]:</div>
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span>goodCandidatesModernNov <span class="o">&lt;-</span> <span class="kp">apply</span><span class="p">(</span>fuzzyClustModernNov<span class="o">$</span>membership<span class="p">,</span><span class="m">1</span><span class="p">,</span>FUN <span class="o">=</span> <span class="kp">max</span><span class="p">)</span> <span class="o">&gt;</span> <span class="m">.5</span>
@@ -12104,14 +12104,14 @@ fuzzyClustModernNov <span class="o">&lt;-</span> fanny<span class="p">(</span>da
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>Now that we've cut out the fringe decks let's look at the face of the modern meta right now.</p>
-<p>First we can list the names of every deck in a cluster. For some clusters we see very tight grouping. Cluster 10 is only Jund. For others like cluster 2 we see a looser affliation of decks, but based around similar cards. For cluster 2, path to exile, collected company and a bit of the land-base bring these decks together (visualzation in the appendix).</p>
+<p>First we can list the names of every deck in a cluster. For some clusters we see very tight grouping. Cluster 10 is only Jund. For others like cluster 2 we see a looser affiliation of decks, but based around similar cards. For cluster 2 path to exile, collected company and a bit of the land-base bring these decks together (visualization in the appendix).</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[141]:</div>
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span>fuzzyClustPlot <span class="o">&lt;-</span> <span class="kt">data.frame</span><span class="p">(</span>deckname <span class="o">=</span> datNovModern<span class="o">$</span>decknames2 <span class="p">,</span> cluster <span class="o">=</span> fuzzyClustModernNov<span class="o">$</span>clustering<span class="p">,</span>aggCol <span class="o">=</span> <span class="m">1</span><span class="p">)[</span>goodCandidatesModernNov<span class="p">,]</span>
@@ -12200,15 +12200,15 @@ p2
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Visualizing the above table into bar graph form we can see the biggest cluster is 4 (Dredge + WUBRG). Some clusters are composed only of single deck names, while others are a hotbed of variation. My best guess at cluster 2 is Selesnya Chord and cluster 16 seems to be several variants of Jeskai Control.</p>
-<p>This is great! We got what we wanted. Decks are now clumped by similar cards, but not constrained by whatever names we're calling them. We also identify decks outside the metagame and choose to treat them differently.</p>
+<p>Visualizing the above table into bar graph form we can see the biggest cluster is 4 (Dredge + WUBRG). Some clusters are composed only of single deck names, while others are a hotbed of variation. My best description of cluster 2 is Selesnya Chord and cluster 16 seems to be several variants of Jeskai Control.</p>
+<p>This is great! We got what we wanted. Decks are now clumped by similar cards, but not constrained by whatever names we're calling them. We can also identify decks outside the metagame and choose to treat them differently.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[142]:</div>
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span>ggplot<span class="p">(</span>p2<span class="p">,</span> aes<span class="p">(</span>cluster<span class="p">,</span> aggCol<span class="p">,</span> fill <span class="o">=</span> deckname<span class="p">))</span> <span class="o">+</span> geom_bar<span class="p">(</span>stat <span class="o">=</span> <span class="s">&quot;Identity&quot;</span><span class="p">)</span> <span class="o">+</span> guides<span class="p">(</span>fill <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span> <span class="o">+</span>
@@ -12259,17 +12259,17 @@ geom_text<span class="p">(</span>aes<span class="p">(</span>x<span class="o">=</
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>After this affair, diversity is a rather simple calculation. Let's view it in three different ways. First we can see how much the most common deck (Dredge NOT Infect) dominates the format, as well as our clusters (or Archetypes). We can also calculate the minimum number of decks it would take to account for 50% of the meta. Right now in Modern, 8 decks cover around 50% of the format (Dredge, Infect, Jund, Affinity, Bant Eldrazi, Burn Variants, Suicide Bloo and Company Decks).</p>
-<p>Also we held off classifying some decks because they were too far from the bulk of other decks being played. These fringe decks currently only populate 12.5% of the meta.</p>
-<p>Finally if we go for something based in a bit more math we can calculate diversity using a Gini coefficient (<a href="https://en.wikipedia.org/wiki/Gini_coefficient">https://en.wikipedia.org/wiki/Gini_coefficient</a>). This number calculates the inequality in a distribution and was originially proposed as a measure of income inequality in countries. The coefficient itself ranges from 0 (perfectly equal number of decks in every cluster) to 1 (all decks in a single cluster, none in any other).</p>
-<p>Right now the modern meta stands at a Gini Index of 0.159! Which means almost nothing without context. Let's look at Modern when I first had some free time to pull some data, 6 months ago in May!</p>
+<p>To understand diversity we can look at it in several different ways. First we can see how much the most common deck (Dredge NOT Infect) dominates the format, as well as our clusters (the meta). We can also calculate the minimum number of decks it would take to account for 50% of the format. Right now in Modern, 8 decks cover around 50% of the format (Dredge, Infect, Jund, Affinity, Bant Eldrazi, Burn Variants, Suicide Bloo and Company Decks).</p>
+<p>Also we held off classifying some decks because they were too far from the bulk of other decks being played. These fringe decks currently only populate 12.5% of the format.</p>
+<p>Finally if we go for something based in a bit more math we can calculate diversity using a Gini coefficient (<a href="https://en.wikipedia.org/wiki/Gini_coefficient">https://en.wikipedia.org/wiki/Gini_coefficient</a>). This number calculates the inequality in a distribution and was originally proposed as a measure of income inequality in countries. The coefficient itself ranges from 0 (perfectly equal number of decks in every cluster) to 1 (all decks in a single cluster, none in any other).</p>
+<p>Right now the modern meta stands at a Gini coefficient of 0.159! Which means almost nothing without context. To compare, let's look at Modern when I first had some free time to pull some data, 6 months ago in May.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[166]:</div>
+<div class="prompt input_prompt">In&nbsp;[11]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="c1">#Diversity Score!</span>
@@ -12279,10 +12279,10 @@ geom_text<span class="p">(</span>aes<span class="p">(</span>x<span class="o">=</
 <span class="kp">sum</span><span class="p">(</span>fuzzyClustModernNov<span class="o">$</span>clustering <span class="o">==</span> <span class="m">4</span><span class="p">)</span><span class="o">/</span><span class="kp">length</span><span class="p">(</span>fuzzyClustModernNov<span class="o">$</span>clustering<span class="p">)</span><span class="o">*</span><span class="m">100</span>
 <span class="kp">print</span><span class="p">(</span><span class="s">&quot;What Percent of Known Archetypes Do Dredge Decks Cover?&quot;</span><span class="p">)</span>
 <span class="kp">max</span><span class="p">(</span><span class="kp">table</span><span class="p">(</span>fuzzyClustModernNov<span class="o">$</span>clustering<span class="p">[</span>goodCandidatesModernNov<span class="p">]))</span><span class="o">/</span><span class="kp">length</span><span class="p">(</span>fuzzyClustModernNov<span class="o">$</span>clustering<span class="p">[</span>goodCandidatesModernNov<span class="p">])</span><span class="o">*</span><span class="m">100</span>
-<span class="kp">print</span><span class="p">(</span><span class="s">&quot;How Many Decks Does it Take to Occupy 50% of The Meta?&quot;</span><span class="p">)</span>
+<span class="kp">print</span><span class="p">(</span><span class="s">&quot;How Many Decks Does it Take to Occupy 50% of The Format?&quot;</span><span class="p">)</span>
 tx <span class="o">&lt;-</span> <span class="kp">table</span><span class="p">(</span>fuzzyClustModernNov<span class="o">$</span>clustering<span class="p">[</span>goodCandidatesModernNov<span class="p">])</span><span class="o">/</span><span class="kp">length</span><span class="p">(</span>fuzzyClustModernNov<span class="o">$</span>clustering<span class="p">)</span>
 <span class="kp">sum</span><span class="p">(</span><span class="kp">cumsum</span><span class="p">(</span>tx<span class="p">[</span><span class="kp">order</span><span class="p">(</span><span class="o">-</span>tx<span class="p">)])</span> <span class="o">&lt;</span> <span class="m">0.5</span><span class="p">)</span> <span class="o">+</span> <span class="m">1</span>
-<span class="kp">print</span><span class="p">(</span><span class="s">&quot;Percentage of the Meta Composed of Unclassified (Fringe) Decks&quot;</span><span class="p">)</span>
+<span class="kp">print</span><span class="p">(</span><span class="s">&quot;Percentage of the Format Composed of Unclassified (Fringe) Decks&quot;</span><span class="p">)</span>
 <span class="kp">sum</span><span class="p">(</span>goodCandidatesModernNov <span class="o">==</span> <span class="kc">FALSE</span><span class="p">)</span><span class="o">/</span><span class="kp">length</span><span class="p">(</span>goodCandidatesModernNov<span class="p">)</span><span class="o">*</span><span class="m">100</span>
 <span class="kp">print</span><span class="p">(</span><span class="s">&quot;Measure of Diversity for Top 10 Most Common Archetypes of the Format&quot;</span><span class="p">)</span>
 topdecks <span class="o">&lt;-</span> <span class="kp">table</span><span class="p">(</span>fuzzyClustModernNov<span class="o">$</span>clustering<span class="p">[</span>goodCandidatesModernNov<span class="p">])[</span><span class="kp">order</span><span class="p">(</span><span class="o">-</span><span class="kp">table</span><span class="p">(</span>fuzzyClustModernNov<span class="o">$</span>clustering<span class="p">[</span>goodCandidatesModernNov<span class="p">]))[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">]]</span>
@@ -12329,7 +12329,7 @@ ineq<span class="p">(</span>topdecks<span class="p">,</span>type <span class="o"
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>[1] &#34;How Many Decks Does it Take to Occupy 50% of The Meta?&#34;
+<pre>[1] &#34;How Many Decks Does it Take to Occupy 50% of The Format?&#34;
 </pre>
 </div>
 </div>
@@ -12344,7 +12344,7 @@ ineq<span class="p">(</span>topdecks<span class="p">,</span>type <span class="o"
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>[1] &#34;Percentage of the Meta Composed of Unclassified (Fringe) Decks&#34;
+<pre>[1] &#34;Percentage of the Format Composed of Unclassified (Fringe) Decks&#34;
 </pre>
 </div>
 </div>
@@ -12390,14 +12390,14 @@ ineq<span class="p">(</span>topdecks<span class="p">,</span>type <span class="o"
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>May was a tumultuous time for Modern. It was only a month after unbanning/banning some serious cards (<a href="http://magic.wizards.com/en/articles/archive/news/banned-and-restricted-announcement-2016-04-04">http://magic.wizards.com/en/articles/archive/news/banned-and-restricted-announcement-2016-04-04</a>). Let's go ahead and perform the same analysis on this data and see if any patterns arise. Is Modern in May more or less of a diverse format?</p>
+<p>May was a tumultuous time for Modern. It was only a month after unbanning/banning some serious cards (<a href="http://magic.wizards.com/en/articles/archive/news/banned-and-restricted-announcement-2016-04-04">http://magic.wizards.com/en/articles/archive/news/banned-and-restricted-announcement-2016-04-04</a>). Let's go ahead and perform the same analysis on this data and see if any patterns arise. Is Modern in May more or less of a diverse format that our current November Modern?</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[70]:</div>
+<div class="prompt input_prompt">In&nbsp;[12]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="c1">#Let&#39;s compare to older timeframes by loading decks from the two weeks leading up to 5/18/16!</span>
@@ -12486,7 +12486,7 @@ wordcloud<span class="p">(</span><span class="kp">as.character</span><span class
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[73]:</div>
+<div class="prompt input_prompt">In&nbsp;[13]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="c1">#Compute manhattan distance between decks</span>
@@ -12548,14 +12548,14 @@ attr(,&#34;class&#34;)
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>Here we went with 15 clusters as opposed to our original 17. The reason for this is buried in the details of how fuzzy c-mean works. After the fuzzy model runs it checks to see if there are any clusters which have no strong memberships to any other decks. These clusters don't describe any deck in particular. They're usually just a mishmash of common cards used in a big grouping of decks. After the model is done it counts the number of clusters that DO have strong membership and ignore those that don't. This number of 'crisp' clusters is called 'k.crisp'.</p>
-<p>If our k.crisp is larger than our original number of cluster k, we should reduce it to the number suggested and run it again (and so we did).</p>
+<p>If our k.crisp is larger than our original number of cluster k, we should reduce it to the number suggested (15) and run it again.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[169]:</div>
+<div class="prompt input_prompt">In&nbsp;[14]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="c1">#Build the May Model (Tinkered with some hyperparameters)</span>
@@ -12637,7 +12637,7 @@ goodCandidatesModernMay <span class="o">&lt;-</span> <span class="kp">apply</spa
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Again we list the decks available by cluster to get an idea of cluster composition. You'll notice that cluster 4 was left our entirely! This happened because even after passing our k.crisp test above, cluster 4 didn't have a single deck with over 50% membership. It really was a cluster full of a smattering of cards mostly centered around lightning bolt (check out the appendix).</p>
+<p>Again we list the decks available by cluster to get an idea of cluster composition. You'll notice that cluster 4 was left out entirely! This happened because even after passing our k.crisp test above, cluster 4 didn't have a single deck with over 50% membership. It really was a cluster full of a smattering of cards mostly centered around lightning bolt (check out the appendix).</p>
 
 </div>
 </div>
@@ -12719,7 +12719,7 @@ p3
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Visualizing the above table into bar graph form we can see the biggest cluster is 10 (Jund with a few variants). Again some clusters stand alone (Affinity and Ad Nauseam), while others are a medley. Cluster 6 is a ton of Tron variants! Also, while we see Jund and Tron variants represented well Infect does get dwarfed a bit by Grixis Control and Delver.</p>
+<p>Visualizing the above table into bar graph form we can see the biggest cluster is 10 (Jund with a few variants). Again some clusters stand alone (Affinity and Ad Nauseam), while others are a medley. Cluster 6 is a ton of Tron variants! Also, while we see Jund and Tron variants represented well, Infect does get dwarfed a bit by Grixis Control and Delver.</p>
 <p>So how are we on diversity?</p>
 
 </div>
@@ -12785,7 +12785,7 @@ geom_text<span class="p">(</span>aes<span class="p">(</span>x<span class="o">=</
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[164]:</div>
+<div class="prompt input_prompt">In&nbsp;[15]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-r"><pre><span></span><span class="c1">#Diversity Score!</span>
@@ -12795,10 +12795,10 @@ geom_text<span class="p">(</span>aes<span class="p">(</span>x<span class="o">=</
 <span class="kp">sum</span><span class="p">(</span>fuzzyClustModernMay<span class="o">$</span>clustering <span class="o">==</span> <span class="m">10</span><span class="p">)</span><span class="o">/</span><span class="kp">length</span><span class="p">(</span>fuzzyClustModernMay<span class="o">$</span>clustering<span class="p">)</span><span class="o">*</span><span class="m">100</span>
 <span class="kp">print</span><span class="p">(</span><span class="s">&quot;What Percent of the Known Archetypes Do Jund Decks Cover?&quot;</span><span class="p">)</span>
 <span class="kp">max</span><span class="p">(</span><span class="kp">table</span><span class="p">(</span>fuzzyClustModernMay<span class="o">$</span>clustering<span class="p">[</span>goodCandidatesModernMay<span class="p">]))</span><span class="o">/</span><span class="kp">length</span><span class="p">(</span>fuzzyClustModernMay<span class="o">$</span>clustering<span class="p">[</span>goodCandidatesModernMay<span class="p">])</span><span class="o">*</span><span class="m">100</span>
-<span class="kp">print</span><span class="p">(</span><span class="s">&quot;How Many Decks Does it Take to Occupy 50% of The Meta?&quot;</span><span class="p">)</span>
+<span class="kp">print</span><span class="p">(</span><span class="s">&quot;How Many Decks Does it Take to Occupy 50% of The Format?&quot;</span><span class="p">)</span>
 tx <span class="o">&lt;-</span> <span class="kp">table</span><span class="p">(</span>fuzzyClustModernMay<span class="o">$</span>clustering<span class="p">[</span>goodCandidatesModernMay<span class="p">])</span><span class="o">/</span><span class="kp">length</span><span class="p">(</span>fuzzyClustModernMay<span class="o">$</span>clustering<span class="p">)</span>
 <span class="kp">sum</span><span class="p">(</span><span class="kp">cumsum</span><span class="p">(</span>tx<span class="p">[</span><span class="kp">order</span><span class="p">(</span><span class="o">-</span>tx<span class="p">)])</span> <span class="o">&lt;</span> <span class="m">0.5</span><span class="p">)</span> <span class="o">+</span> <span class="m">1</span>
-<span class="kp">print</span><span class="p">(</span><span class="s">&quot;Percentage of the Meta Composed of Unclassified (Fringe) Decks&quot;</span><span class="p">)</span>
+<span class="kp">print</span><span class="p">(</span><span class="s">&quot;Percentage of the Format Composed of Unclassified (Fringe) Decks&quot;</span><span class="p">)</span>
 <span class="kp">sum</span><span class="p">(</span>goodCandidatesModernMay <span class="o">==</span> <span class="kc">FALSE</span><span class="p">)</span><span class="o">/</span><span class="kp">length</span><span class="p">(</span>goodCandidatesModernMay<span class="p">)</span>
 <span class="kp">print</span><span class="p">(</span><span class="s">&quot;Measure of Diversity for Top 10 Most Common Archetypes of the Format&quot;</span><span class="p">)</span>
 topdecks <span class="o">&lt;-</span> <span class="kp">table</span><span class="p">(</span>fuzzyClustModernMay<span class="o">$</span>clustering<span class="p">[</span>goodCandidatesModernMay<span class="p">])[</span><span class="kp">order</span><span class="p">(</span><span class="o">-</span><span class="kp">table</span><span class="p">(</span>fuzzyClustModernMay<span class="o">$</span>clustering<span class="p">[</span>goodCandidatesModernMay<span class="p">]))[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">]]</span>
@@ -12845,7 +12845,7 @@ ineq<span class="p">(</span>topdecks<span class="p">,</span>type <span class="o"
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>[1] &#34;How Many Decks Does it Take to Occupy 50% of The Meta?&#34;
+<pre>[1] &#34;How Many Decks Does it Take to Occupy 50% of The Format?&#34;
 </pre>
 </div>
 </div>
@@ -12860,7 +12860,7 @@ ineq<span class="p">(</span>topdecks<span class="p">,</span>type <span class="o"
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>[1] &#34;Percentage of the Meta Composed of Unclassified (Fringe) Decks&#34;
+<pre>[1] &#34;Percentage of the Format Composed of Unclassified (Fringe) Decks&#34;
 </pre>
 </div>
 </div>
@@ -12897,13 +12897,13 @@ ineq<span class="p">(</span>topdecks<span class="p">,</span>type <span class="o"
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>In May Jund (and a few Jund related variants) represented 8.4% of the meta and 11.2% of the known archetypes. Now Dredge (and WUBRG) represents 9.3% of the meta but 10.6% of the known archetypes. In both timeframes 8 decks archetypes were enough to account for half of the format. What is starkly different between the two timeframes is the percentage of fringe decks! While now we sit at roughly 12.5% fringe decks, modern in May had 25% of its decks with no identifyable archetype. This means that experimentation was rampant in May compared to now and in winter the meta has cooled down and solidifed around more decks (20 vs 15), but less experimentation.</p>
-<p>Speaking directly to the perception of diversity one could argue Jund looked more dominant back in May because it took up a larger proportion of the percieved meta (11.2%) even though rampant experimentation was going on. Dredge by contrast occupies less of the total meta (10.6%), but that's only due to a smaller amount of experimentation. In reality Dredge stands more prevalant than Jund at 9.3% of the current meta.</p>
-<p>These differences are surprisingly minor. We can look to the gini coefficient for both timeframes. Though we are now in a less diverse format gini coefficient of 0.159 compared to 0.097 back in May these differences are actually quite minor. For instance, look at the differences between the meta in modern now <a href="https://www.mtggoldfish.com/metagame/modern#online">https://www.mtggoldfish.com/metagame/modern#online</a> and the prevalence of 
-the most dominant deck in standard <a href="https://www.mtggoldfish.com/metagame/standard#online">https://www.mtggoldfish.com/metagame/standard#online</a> (White-Blue Flash by mtggoldfish's own account is 29.23% of the meta).</p>
-<p>Even though things have cooled down and we have less experimentation...yeah folks. We have it pretty good.</p>
+<p>In May Jund (and a few Jund related variants) represented 8.4% of the meta and 11.2% of the known archetypes. Now Dredge (and WUBRG) represents 9.3% of the meta but 10.6% of the known archetypes. In both time frames 8 decks archetypes were enough to account for half of the format. What is starkly different between the two time frames is the percentage of fringe decks. While now we sit at roughly 12.5% fringe decks, modern in May had 25% of its decks with no identifiable archetype. This means that experimentation was rampant in May compared to now and in winter the meta has cooled down and solidified around more decks (20 vs 15), but less experimentation.</p>
+<p>Speaking directly to the perception of diversity one could argue Jund looked more dominant back in May because it took up a larger proportion of the perceived meta (11.2%) even though rampant experimentation was going on. Dredge by contrast now occupies less of the total meta (10.6%), but that's only due to a smaller amount of experimentation. In reality Dredge stands more prevalent at 9.3% of the current format versus Jund's 8.4%.</p>
+<p>For more rigor we can look to the Gini coefficient for both time frames. Though we are now in a less diverse format, a gini coefficient of 0.159 compared to 0.097 back in May, these differences are actually quite minor. For instance, look at the differences between the meta in modern now <a href="https://www.mtggoldfish.com/metagame/modern#online">https://www.mtggoldfish.com/metagame/modern#online</a> and the prevalence of 
+the most dominant deck in standard <a href="https://www.mtggoldfish.com/metagame/standard#online">https://www.mtggoldfish.com/metagame/standard#online</a> (White-Blue Flash by mtggoldfish's own account is 29.23% of the meta). Currently the difference between standard and modern showcases a much larger difference in diversity.</p>
+<p>Bottom line: Even though things have cooled down and we have less experimentation...yeah folks. We have a pretty diverse format.</p>
 <p>Some parting words:</p>
-<p>I want to thank Wizards of the Coast and MTGGoldfish for all the data I was able to glean and all of you for reading this. As in all research I think there's a good deal more to do here and many things worth improving (sample size, model selection, finding a better way to pick the number of clusters). Please let me know if you have any questions or comments.</p>
+<p>I want to thank Wizards of the Coast and MTGGoldfish for all the data I was able to glean and all of you for reading this. As in all research I think there's a good deal more to do here and many things worth improving (sample size, model selection, finding a better way to pick the number of clusters). Please let me know if you have any questions or comments at mathitthegathering@gmail.com .</p>
 
 </div>
 </div>
